@@ -161,9 +161,9 @@ setup(
         # In general, avoid adding more dependencies like them because they are not
         # guaranteed to be installable by `pip install` on all platforms.
         # To tell if a package is pure-python, go to https://pypi.org/project/{name}/#files
-        "Pillow>=7.1",  # or use pillow-simd for better performance
-        "matplotlib",  # TODO move it to optional after we add opencv visualization
-        "pycocotools>=2.0.2",  # corresponds to https://github.com/ppwwyyxx/cocoapi
+        "Pillow==9.5.0",  # or use pillow-simd for better performance
+        "matplotlib==3.7.5",  # TODO move it to optional after we add opencv visualization
+        "pycocotools==2.0.2",  # corresponds to https://github.com/ppwwyyxx/cocoapi
         # Do not add opencv here. Just like pytorch, user should install
         # opencv themselves, preferrably by OS's package manager, or by
         # choosing the proper pypi package name at https://github.com/skvark/opencv-python
@@ -172,8 +172,8 @@ setup(
         "yacs>=0.1.8",
         "tabulate",
         "cloudpickle",
-        "tqdm>4.29.0",
-        "tensorboard",
+        "tqdm==4.63.3",
+        "tensorboard==1.15.0",
         # Lock version of fvcore/iopath because they may have breaking changes
         # NOTE: when updating fvcore/iopath version, make sure fvcore depends
         # on compatible version of iopath.
