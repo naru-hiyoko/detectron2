@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Copyright (c) Facebook, Inc. and its affiliates.
+# Copyright (c) Facebook, Inc. and its affiliates. All Rights Reserved
 
 """
 PointRend Training Script.
@@ -7,13 +7,15 @@ PointRend Training Script.
 This script is a simplified version of the training script in detectron2/tools.
 """
 
+import sys
 import os
+import torch
 
 import detectron2.data.transforms as T
 import detectron2.utils.comm as comm
 from detectron2.checkpoint import DetectionCheckpointer
 from detectron2.config import get_cfg
-from detectron2.data import DatasetMapper, MetadataCatalog, build_detection_train_loader
+from detectron2.data import DatasetCatalog, DatasetMapper, MetadataCatalog, build_detection_train_loader
 from detectron2.engine import DefaultTrainer, default_argument_parser, default_setup, launch
 from detectron2.evaluation import (
     CityscapesInstanceEvaluator,
@@ -24,8 +26,9 @@ from detectron2.evaluation import (
     SemSegEvaluator,
     verify_results,
 )
-from detectron2.projects.point_rend import ColorAugSSDTransform, add_pointrend_config
 
+from point_rend import ColorAugSSDTransform, add_pointrend_config
+import proj_dataset
 
 def build_sem_seg_train_aug(cfg):
     augs = [
@@ -69,18 +72,26 @@ class Trainer(DefaultTrainer):
         evaluator_list = []
         evaluator_type = MetadataCatalog.get(dataset_name).evaluator_type
         if evaluator_type == "lvis":
-            return LVISEvaluator(dataset_name, output_dir=output_folder)
+            return LVISEvaluator(dataset_name, cfg, True, output_folder)
         if evaluator_type == "coco":
-            return COCOEvaluator(dataset_name, output_dir=output_folder)
+            return COCOEvaluator(dataset_name, cfg, True, output_folder)
         if evaluator_type == "sem_seg":
             return SemSegEvaluator(
                 dataset_name,
                 distributed=True,
+                num_classes=cfg.MODEL.SEM_SEG_HEAD.NUM_CLASSES,
+                ignore_label=cfg.MODEL.SEM_SEG_HEAD.IGNORE_VALUE,
                 output_dir=output_folder,
             )
         if evaluator_type == "cityscapes_instance":
+            assert (
+                torch.cuda.device_count() >= comm.get_rank()
+            ), "CityscapesEvaluator currently do not work with multiple machines."
             return CityscapesInstanceEvaluator(dataset_name)
         if evaluator_type == "cityscapes_sem_seg":
+            assert (
+                torch.cuda.device_count() >= comm.get_rank()
+            ), "CityscapesEvaluator currently do not work with multiple machines."
             return CityscapesSemSegEvaluator(dataset_name)
         if len(evaluator_list) == 0:
             raise NotImplementedError(
@@ -134,6 +145,9 @@ def main(args):
 
 if __name__ == "__main__":
     args = default_argument_parser().parse_args()
+    # MARK: Specify dataset root.
+    proj_dataset.generate_catalog('proj_all_train_val')
+
     print("Command Line Args:", args)
     launch(
         main,
