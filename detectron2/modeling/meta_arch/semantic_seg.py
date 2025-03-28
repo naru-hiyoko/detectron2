@@ -115,6 +115,7 @@ class SemanticSegmentor(nn.Module):
                 self.sem_seg_head.ignore_value,
                 self.backbone.padding_constraints,
             ).tensor
+            targets = targets.long()
         else:
             targets = None
         results, losses = self.sem_seg_head(features, targets)
